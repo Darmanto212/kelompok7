@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
-import requests
-from io import BytesIO
 
 
 # ======================
@@ -23,50 +21,24 @@ st.set_page_config(
 # LOAD ASSETS
 # ======================
 def load_assets():
-    heart_img_url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/heart_image.jpg"
-    response = requests.get(heart_img_url)
-    if response.status_code == 200:
-        heart_img = Image.open(BytesIO(response.content))  # Membaca gambar dari URL
-        return heart_img
-    else:
-        st.error(f"Gambar tidak ditemukan: {response.status_code}")
-        return None
+    heart_img = Image.open("heart_image.jpg")  # Ganti dengan path gambar Anda
+    return heart_img
 
 
 heart_image = load_assets()
 
 
 # ======================
-# LOAD MODEL DARI URL
-# ======================
-def load_model_from_url(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        model_file = BytesIO(response.content)  # Membaca file model ke dalam BytesIO
-        return pickle.load(model_file)  # Memuat model menggunakan pickle
-    else:
-        st.error(f"Terjadi kesalahan saat mengunduh file: {response.status_code}")
-        return None
-
-
-# ======================
-# LOAD MODEL & SCALER DARI URL
+# LOAD MODEL & SCALER
 # ======================
 @st.cache_resource
 def load_models():
-    # URL raw GitHub untuk file model
-    random_forest_model_url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/random_forest_model.pkl"
-    svm_model_url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/svm_model.pkl"
-    logistic_regression_model_url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/logistic_regression_model.pkl"
-    scaler_url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/scaler.pkl"
-    
-    # Mengunduh dan memuat model dari URL
     models = {
-        "Random Forest": load_model_from_url(random_forest_model_url),
-        "SVM": load_model_from_url(svm_model_url),
-        "Logistic Regression": load_model_from_url(logistic_regression_model_url),
+        "Random Forest": pickle.load(open("random_forest_model.pkl", "rb")),
+        "SVM": pickle.load(open("svm_model.pkl", "rb")),
+        "Logistic Regression": pickle.load(open("logistic_regression_model.pkl", "rb")),
     }
-    scaler = load_model_from_url(scaler_url)
+    scaler = pickle.load(open("scaler.pkl", "rb"))
     return models, scaler
 
 
@@ -85,6 +57,14 @@ def main():
         show_prediction_page()
     else:
         show_about_page()
+    with st.sidebar:
+        st.write("Profile Saya:")
+        st.write(
+            """
+        - Nama: Deri Nasrudin
+        - NIM: 411222045
+        """
+        )
 
 
 # ======================
@@ -145,7 +125,6 @@ def show_prediction_page():
                 "Hasil Thallium Scan (thal)",
                 ["1. Normal", "2. Cacat Tetap", "3. Cacat Reversibel"],
             )
-
     # Konversi input ke numerik
     sex = 1 if sex == "1. Laki-laki" else 0
     cp_mapping = {
@@ -214,6 +193,7 @@ def show_prediction_page():
                         ),
                     }
                 )
+                # time.sleep(2)
 
             # Simpan hasil prediksi ke session state
             st.session_state.results = results
