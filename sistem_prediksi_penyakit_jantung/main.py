@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
-import requests
-from io import BytesIO
 
 
 # ======================
@@ -19,17 +17,11 @@ st.set_page_config(
 )
 
 
+
 # ======================
 # LOAD ASSETS
 # ======================
 def load_assets():
-    heart_img_url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/heart_image.jpg"
-    response = requests.get(heart_img_url)
-    if response.status_code == 200:
-        heart_img = Image.open(BytesIO(response.content))  # Membaca gambar dari URL
-        return heart_img
-    else:
-        st.error(f"Gambar tidak ditemukan: {response.status_code}")
         return None
 
 
@@ -40,12 +32,6 @@ heart_image = load_assets()
 # LOAD MODEL DARI URL
 # ======================
 def load_model_from_url(url):
-    response = requests.get(url)
-    if response.status_code == 200:
-        model_file = BytesIO(response.content)  # Membaca file model ke dalam BytesIO
-        return pickle.load(model_file)  # Memuat model menggunakan pickle
-    else:
-        st.error(f"Terjadi kesalahan saat mengunduh file: {response.status_code}")
         return None
 
 
@@ -54,19 +40,6 @@ def load_model_from_url(url):
 # ======================
 @st.cache_resource
 def load_models():
-    # URL raw GitHub untuk file model
-    random_forest_model_url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/random_forest_model.pkl"
-    svm_model_url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/svm_model.pkl"
-    logistic_regression_model_url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/logistic_regression_model.pkl"
-    scaler_url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/scaler.pkl"
-    
-    # Mengunduh dan memuat model dari URL
-    models = {
-        "Random Forest": load_model_from_url(random_forest_model_url),
-        "SVM": load_model_from_url(svm_model_url),
-        "Logistic Regression": load_model_from_url(logistic_regression_model_url),
-    }
-    scaler = load_model_from_url(scaler_url)
     return models, scaler
 
 
@@ -85,6 +58,14 @@ def main():
         show_prediction_page()
     else:
         show_about_page()
+    with st.sidebar:
+        st.write("Profile Saya:")
+        st.write(
+            """
+        - Nama: Deri Nasrudin
+        - NIM: 411222045
+        """
+        )
 
 
 # ======================
@@ -145,7 +126,6 @@ def show_prediction_page():
                 "Hasil Thallium Scan (thal)",
                 ["1. Normal", "2. Cacat Tetap", "3. Cacat Reversibel"],
             )
-
     # Konversi input ke numerik
     sex = 1 if sex == "1. Laki-laki" else 0
     cp_mapping = {
@@ -214,6 +194,7 @@ def show_prediction_page():
                         ),
                     }
                 )
+                # time.sleep(2)
 
             # Simpan hasil prediksi ke session state
             st.session_state.results = results
@@ -247,38 +228,86 @@ def show_prediction_page():
                 ]
                 ax.bar(
                     results_df["Model"],
-                    [float(x["Tingkat Risiko"][:-1]) for x in results],
+                    results_df["Tingkat Risiko"].str.replace("%", "").astype(float),
                     color=colors,
                 )
-                ax.set_ylabel("Tingkat Risiko (%)")
-                ax.set_title("Perbandingan Prediksi Model")
+                ax.axhline(y=50, color="red", linestyle="--")
+                ax.set_ylabel("Persentase Risiko (%)")
+                ax.set_ylim(0, 100)
+                plt.xticks(rotation=45)
                 st.pyplot(fig)
+
+            # Rekomendasi
+            st.subheader("💡 Rekomendasi")
+            if any(float(x["Tingkat Risiko"][:-1]) >= 50 for x in results):
+                st.warning(
+                    """
+                **Pasien memiliki risiko penyakit jantung. Disarankan untuk:**
+                - Konsultasi segera dengan dokter spesialis jantung
+                - Melakukan pemeriksaan EKG dan tes treadmill
+                - Memperbaiki pola makan dan gaya hidup
+                """
+                )
+            else:
+                st.info(
+                    """
+                **Pasien memiliki risiko rendah. Tetap jaga kesehatan dengan:**
+                - Rutin berolahraga
+                - Diet seimbang
+                - Cek kesehatan berkala
+                """
+                )
 
 
 # ======================
 # HALAMAN TENTANG
 # ======================
 def show_about_page():
-    st.title("🔍 Tentang Aplikasi")
-    st.write(
+    st.title("📚 Tentang Aplikasi Ini")
+
+    st.markdown(
         """
-    Aplikasi ini digunakan untuk memprediksi apakah seseorang berisiko terkena penyakit jantung berdasarkan beberapa parameter medis.
+    ### ❤️ Aplikasi Prediksi Penyakit Jantung
+    Aplikasi ini menggunakan 3 model Machine Learning untuk memprediksi risiko penyakit jantung 
+    berdasarkan data klinis pasien.
+    """
+    )
 
-    **Model yang digunakan:**
-    - Logistic Regression
-    - Random Forest
-    - SVM (Support Vector Machine)
+    with st.expander("🔍 Detail Model", expanded=False):
+        st.markdown(
+            """
+        **Model yang digunakan:**
+        1. Random Forest Classifier
+        2. Support Vector Machine (SVM)
+        3. Logistic Regression
+        
+        **Akurasi Model:**
+        - Random Forest: 84%
+        - SVM: 84% 
+        - Logistic Regression: 86%
+        """
+        )
 
-    Aplikasi ini memanfaatkan Machine Learning untuk menganalisis data pasien dan memberikan hasil prediksi dalam bentuk "Positif" atau "Negatif" penyakit jantung.
+    with st.expander("📝 Petunjuk Penggunaan", expanded=False):
+        st.markdown(
+            """
+        1. Isi semua data pasien pada form input
+        2. Klik tombol "Prediksi Sekarang"
+        3. Lihat hasil prediksi dan rekomendasi
+        4. Untuk prediksi baru, refresh halaman
+        """
+        )
 
-    **Sumber Data:**
-    - Dataset ini diambil dari berbagai penelitian dan sumber terbuka terkait penyakit jantung.
-
-    **Pengembangan oleh:**
-    - Tim Kelompok 7
+    st.markdown(
+        """
+    ### ⚠️ Disclaimer
+    Hasil prediksi ini bukan diagnosis medis. Konsultasikan dengan dokter untuk pemeriksaan lebih lanjut.
     """
     )
 
 
+# ======================
+# RUN APLIKASI
+# ======================
 if __name__ == "__main__":
     main()
