@@ -21,7 +21,7 @@ st.set_page_config(
 # LOAD ASSETS
 # ======================
 def load_assets():
-    heart_img = Image.open("heart_image.jpg")  # Ganti dengan path gambar Anda
+    heart_img = Image.open("https://github.com/Darmanto212/kelompok7/blob/main/sistem_prediksi_penyakit_jantung/heart_image.jpg")  # Ganti dengan path gambar Anda
     return heart_img
 
 
