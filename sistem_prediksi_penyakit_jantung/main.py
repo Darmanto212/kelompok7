@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st 
 import pickle
 import numpy as np
 import pandas as pd
@@ -212,28 +212,42 @@ def show_prediction_page():
                 ]
             )
 
+            # Cek apakah scaler ada dan bisa dipakai
+            models, scaler = load_models()
+            if scaler is None:
+                st.error("Scaler tidak dapat dimuat. Coba lagi nanti.")
+                return
+
             # Scaling
-            input_scaled = scaler.transform(input_data)
+            try:
+                input_scaled = scaler.transform(input_data)
+            except Exception as e:
+                st.error(f"Terjadi kesalahan saat scaling data: {e}")
+                return
 
             # Prediksi
             results = []
             for name, model in models.items():
-                proba = model.predict_proba(input_scaled)[0][1]
-                prediction = (
-                    "Positif Penyakit Jantung"
-                    if proba >= 0.5
-                    else "Negatif Penyakit Jantung"
-                )
-                results.append(
-                    {
-                        "Model": name,
-                        "Hasil Prediksi": prediction,
-                        "Tingkat Risiko": f"{proba*100:.1f}%",
-                        "Keterangan": (
-                            "Risiko Tinggi" if proba >= 0.5 else "Risiko Rendah"
-                        ),
-                    }
-                )
+                try:
+                    proba = model.predict_proba(input_scaled)[0][1]
+                    prediction = (
+                        "Positif Penyakit Jantung"
+                        if proba >= 0.5
+                        else "Negatif Penyakit Jantung"
+                    )
+                    results.append(
+                        {
+                            "Model": name,
+                            "Hasil Prediksi": prediction,
+                            "Tingkat Risiko": f"{proba*100:.1f}%",
+                            "Keterangan": (
+                                "Risiko Tinggi" if proba >= 0.5 else "Risiko Rendah"
+                            ),
+                        }
+                    )
+                except Exception as e:
+                    st.error(f"Terjadi kesalahan saat melakukan prediksi dengan model {name}: {e}")
+                    return
 
             # Simpan hasil prediksi ke session state
             st.session_state.results = results
