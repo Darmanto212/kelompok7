@@ -21,11 +21,10 @@ st.set_page_config(
 # LOAD ASSETS
 # ======================
 def load_assets():
-    heart_img = Image.open("https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/heart_image.jpg")
-    return heart_img
-
-
-heart_image = load_assets()
+    url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/heart_image.jpg"
+    response = requests.get(url)
+    img = Image.open(BytesIO(response.content))  # Membuka gambar dari data yang diunduh
+    return img
 
 
 # ======================
