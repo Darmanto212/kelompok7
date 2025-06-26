@@ -4,7 +4,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
-
+import requests
+from io import BytesIO
 
 # ======================
 # SETTING HALAMAN
@@ -21,8 +22,20 @@ st.set_page_config(
 # LOAD ASSETS
 # ======================
 def load_assets():
-    heart_img = Image.open("https://github.com/Darmanto212/kelompok7/blob/main/sistem_prediksi_penyakit_jantung/heart_image.jpg")  # Ganti dengan path gambar Anda
-    return heart_img
+    # URL gambar raw dari GitHub
+    url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/heart_image.jpg"
+    
+    # Unduh gambar
+    response = requests.get(url)
+    
+    # Pastikan responsnya berhasil (status code 200)
+    if response.status_code == 200:
+        # Baca gambar dari byte
+        heart_img = Image.open(BytesIO(response.content))
+        return heart_img
+    else:
+        st.error("Gagal memuat gambar dari URL.")
+        return None
 
 
 heart_image = load_assets()
@@ -185,7 +198,6 @@ def show_prediction_page():
                         ),
                     }
                 )
-                # time.sleep(2)
 
             # Simpan hasil prediksi ke session state
             st.session_state.results = results
@@ -201,9 +213,9 @@ def show_prediction_page():
                 st.dataframe(
                     results_df.style.applymap(
                         lambda x: (
-                            "background-color: #820901	"
+                            "background-color: #820901"
                             if "Positif" in str(x)
-                            else "background-color: #008000	"
+                            else "background-color: #008000"
                         ),
                         subset=["Hasil Prediksi"],
                     ),
