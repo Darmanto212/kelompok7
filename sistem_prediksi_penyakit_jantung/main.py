@@ -97,16 +97,6 @@ def main():
     else:
         show_about_page()
 
-    with st.sidebar:
-        st.write("Profile Saya:")
-        st.write(
-            """
-        - Nama: Deri Nasrudin
-        - NIM: 411222045
-        """
-        )
-
-
 # ======================
 # HALAMAN PREDIKSI
 # ======================
