@@ -21,7 +21,7 @@ st.set_page_config(
 # LOAD ASSETS
 # ======================
 def load_assets():
-    heart_img = Image.open("heart_image.jpg")  # Ganti dengan path gambar Anda
+    heart_img = Image.open("https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/heart_image.jpg")
     return heart_img
 
 
@@ -33,16 +33,24 @@ heart_image = load_assets()
 # ======================
 @st.cache_resource
 def load_models():
-    models = {
-        "Random Forest": pickle.load(open("random_forest_model.pkl", "rb")),
-        "SVM": pickle.load(open("svm_model.pkl", "rb")),
-        "Logistic Regression": pickle.load(open("logistic_regression_model.pkl", "rb")),
+    # Download dan load model dari GitHub
+    model_urls = {
+        "Random Forest": "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/random_forest_model.pkl",
+        "SVM": "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/svm_model.pkl",
+        "Logistic Regression": "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/logistic_regression_model.pkl"
     }
-    scaler = pickle.load(open("scaler.pkl", "rb"))
+
+    models = {}
+    for name, url in model_urls.items():
+        response = requests.get(url)
+        models[name] = pickle.load(BytesIO(response.content))
+    
+    # Download dan load scaler
+    scaler_url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/scaler.pkl"
+    response = requests.get(scaler_url)
+    scaler = pickle.load(BytesIO(response.content))
+    
     return models, scaler
-
-
-models, scaler = load_models()
 
 
 # ======================
