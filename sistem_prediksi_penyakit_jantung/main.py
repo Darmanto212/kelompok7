@@ -32,7 +32,7 @@ def load_assets():
         st.error(f"Error mengunduh gambar: {e}")
         return None
     except Exception as e:
-        st.error(f"Error memuat gambar: {e}")
+        st.error(f"Terjadi kesalahan saat memuat gambar: {e}")
         return None
 
 
@@ -56,22 +56,25 @@ def load_models():
             models[name] = pickle.load(BytesIO(response.content))
         except requests.exceptions.RequestException as e:
             st.error(f"Error mengunduh model {name}: {e}")
+        except pickle.UnpicklingError as e:
+            st.error(f"Error saat memuat model {name}: {e}")
         except Exception as e:
-            st.error(f"Error memuat model {name}: {e}")
+            st.error(f"Terjadi kesalahan lainnya saat memuat model {name}: {e}")
 
     # URL untuk scaler
     scaler_url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/scaler.pkl"
+    scaler = None
     try:
         response = requests.get(scaler_url)
         response.raise_for_status()
         scaler = pickle.load(BytesIO(response.content))
     except requests.exceptions.RequestException as e:
         st.error(f"Error mengunduh scaler: {e}")
-        scaler = None
+    except pickle.UnpicklingError as e:
+        st.error(f"Error saat memuat scaler: {e}")
     except Exception as e:
-        st.error(f"Error memuat scaler: {e}")
-        scaler = None
-    
+        st.error(f"Terjadi kesalahan lainnya saat memuat scaler: {e}")
+
     return models, scaler
 
 
@@ -93,6 +96,15 @@ def main():
         show_prediction_page()
     else:
         show_about_page()
+
+    with st.sidebar:
+        st.write("Profile Saya:")
+        st.write(
+            """
+        - Nama: Deri Nasrudin
+        - NIM: 411222045
+        """
+        )
 
 
 # ======================
