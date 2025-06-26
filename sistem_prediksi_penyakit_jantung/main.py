@@ -4,7 +4,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
-
+import requests
+from io import BytesIO
 
 # ======================
 # SETTING HALAMAN
@@ -22,9 +23,17 @@ st.set_page_config(
 # ======================
 def load_assets():
     url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/heart_image.jpg"
-    response = requests.get(url)
-    img = Image.open(BytesIO(response.content))  # Membuka gambar dari data yang diunduh
-    return img
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Memastikan URL dapat diakses
+        img = Image.open(BytesIO(response.content))  # Membuka gambar dari data yang diunduh
+        return img
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error mengunduh gambar: {e}")
+        return None
+    except Exception as e:
+        st.error(f"Error memuat gambar: {e}")
+        return None
 
 
 # ======================
@@ -32,7 +41,7 @@ def load_assets():
 # ======================
 @st.cache_resource
 def load_models():
-    # Download dan load model dari GitHub
+    # URL model yang diunduh dari GitHub
     model_urls = {
         "Random Forest": "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/random_forest_model.pkl",
         "SVM": "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/svm_model.pkl",
@@ -41,13 +50,27 @@ def load_models():
 
     models = {}
     for name, url in model_urls.items():
-        response = requests.get(url)
-        models[name] = pickle.load(BytesIO(response.content))
-    
-    # Download dan load scaler
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            models[name] = pickle.load(BytesIO(response.content))
+        except requests.exceptions.RequestException as e:
+            st.error(f"Error mengunduh model {name}: {e}")
+        except Exception as e:
+            st.error(f"Error memuat model {name}: {e}")
+
+    # URL untuk scaler
     scaler_url = "https://raw.githubusercontent.com/Darmanto212/kelompok7/main/sistem_prediksi_penyakit_jantung/scaler.pkl"
-    response = requests.get(scaler_url)
-    scaler = pickle.load(BytesIO(response.content))
+    try:
+        response = requests.get(scaler_url)
+        response.raise_for_status()
+        scaler = pickle.load(BytesIO(response.content))
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error mengunduh scaler: {e}")
+        scaler = None
+    except Exception as e:
+        st.error(f"Error memuat scaler: {e}")
+        scaler = None
     
     return models, scaler
 
@@ -56,7 +79,13 @@ def load_models():
 # TAMPILAN UTAMA
 # ======================
 def main():
-    st.sidebar.image(heart_image, width=250)
+    # Memuat gambar
+    heart_image = load_assets()
+    if heart_image:
+        st.sidebar.image(heart_image, width=250)
+    else:
+        st.sidebar.write("Gambar tidak dapat dimuat.")
+    
     st.sidebar.title("Navigasi")
     menu = st.sidebar.radio("Pilih Menu:", ["Prediksi", "Tentang Aplikasi"])
 
@@ -64,14 +93,6 @@ def main():
         show_prediction_page()
     else:
         show_about_page()
-    with st.sidebar:
-        st.write("Profile Saya:")
-        st.write(
-            """
-        - Nama: Deri Nasrudin
-        - NIM: 411222045
-        """
-        )
 
 
 # ======================
@@ -132,6 +153,7 @@ def show_prediction_page():
                 "Hasil Thallium Scan (thal)",
                 ["1. Normal", "2. Cacat Tetap", "3. Cacat Reversibel"],
             )
+    
     # Konversi input ke numerik
     sex = 1 if sex == "1. Laki-laki" else 0
     cp_mapping = {
@@ -200,7 +222,6 @@ def show_prediction_page():
                         ),
                     }
                 )
-                # time.sleep(2)
 
             # Simpan hasil prediksi ke session state
             st.session_state.results = results
@@ -216,9 +237,9 @@ def show_prediction_page():
                 st.dataframe(
                     results_df.style.applymap(
                         lambda x: (
-                            "background-color: #820901	"
+                            "background-color: #820901"
                             if "Positif" in str(x)
-                            else "background-color: #008000	"
+                            else "background-color: #008000"
                         ),
                         subset=["Hasil Prediksi"],
                     ),
